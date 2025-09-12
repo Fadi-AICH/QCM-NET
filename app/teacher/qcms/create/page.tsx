@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Plus, Trash2, Save } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
 
 interface Question {
   id: string
@@ -21,8 +23,10 @@ interface Question {
 export default function CreateQCMPage() {
   console.log("[v0] CreateQCMPage component is rendering")
 
+  const router = useRouter()
   const [qcmTitle, setQcmTitle] = useState("")
   const [qcmDescription, setQcmDescription] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
   const [questions, setQuestions] = useState<Question[]>([
     {
       id: "1",
@@ -65,10 +69,92 @@ export default function CreateQCMPage() {
     )
   }
 
+  const validateForm = () => {
+    if (!qcmTitle.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a QCM title",
+        variant: "destructive",
+      })
+      return false
+    }
+
+    if (questions.some((q) => !q.question.trim())) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all question texts",
+        variant: "destructive",
+      })
+      return false
+    }
+
+    if (questions.some((q) => q.options.some((opt) => !opt.trim()))) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all answer options",
+        variant: "destructive",
+      })
+      return false
+    }
+
+    return true
+  }
+
+  const handleSaveAsDraft = async () => {
+    if (!validateForm()) return
+
+    setIsLoading(true)
+    try {
+      // TODO: Implement actual API call to save as draft
+      console.log("[v0] Saving QCM as draft:", { qcmTitle, qcmDescription, questions })
+
+      toast({
+        title: "Success",
+        description: "QCM saved as draft successfully",
+      })
+
+      // Navigate back to QCMs list
+      router.push("/teacher/qcms")
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save QCM as draft",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handlePublish = async () => {
+    if (!validateForm()) return
+
+    setIsLoading(true)
+    try {
+      // TODO: Implement actual API call to publish QCM
+      console.log("[v0] Publishing QCM:", { qcmTitle, qcmDescription, questions })
+
+      toast({
+        title: "Success",
+        description: "QCM published successfully",
+      })
+
+      // Navigate back to QCMs list
+      router.push("/teacher/qcms")
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to publish QCM",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Implement QCM creation logic
-    console.log("Creating QCM:", { qcmTitle, qcmDescription, questions })
+    handlePublish()
   }
 
   return (
@@ -82,12 +168,17 @@ export default function CreateQCMPage() {
           <p className="text-muted-foreground">Design your quiz with multiple choice questions</p>
         </div>
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center space-y-2 lg:space-y-0 lg:space-x-2">
-          <Button variant="outline" className="w-full lg:w-auto bg-transparent">
+          <Button
+            variant="outline"
+            className="w-full lg:w-auto bg-transparent"
+            onClick={handleSaveAsDraft}
+            disabled={isLoading}
+          >
             Save as Draft
           </Button>
-          <Button onClick={handleSubmit} className="w-full lg:w-auto">
+          <Button onClick={handlePublish} className="w-full lg:w-auto" disabled={isLoading}>
             <Save className="w-4 h-4 mr-2" />
-            Publish QCM
+            {isLoading ? "Publishing..." : "Publish QCM"}
           </Button>
         </div>
       </div>
